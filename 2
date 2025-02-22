@@ -1,0 +1,21 @@
+const std = @import("std");
+const net = std.net;
+
+pub fn main() !void {
+    var args = std.process.args();
+    const stdout_file = std.io.getStdOut().writer();
+    var bw = std.io.bufferedWriter(stdout_file);
+    const stdout = bw.writer();
+
+    if (args.inner.count == 1) {
+        try stdout.print("Address needs to be specificed\n./gemini-protocol gemini://geminiprotocol.net/\n", .{});
+        try bw.flush();
+        return;
+    }
+
+    const name = args.next();
+
+    try stdout.print("Args: {any}\n", .{name});
+
+    try bw.flush(); // don't forget to flush!
+}
