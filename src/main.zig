@@ -1,5 +1,8 @@
 const std = @import("std");
 const net = std.net;
+const openssl = @cImport({
+    @cInclude("openssl/ssl.h");
+});
 
 pub fn main() !void {
     var args = std.process.args();
@@ -55,26 +58,78 @@ pub fn main() !void {
     };
 
     try stdout.print("Connected to: {s}\n", .{address});
+    try bw.flush();
+
+    _ = openssl.OPENSSL_init_crypto(openssl.OPENSSL_INIT_ADD_ALL_CIPHERS | openssl.OPENSSL_INIT_ADD_ALL_DIGESTS | openssl.OPENSSL_INIT_LOAD_CONFIG, null);
+    _ = openssl.OPENSSL_init_ssl(openssl.OPENSSL_INIT_LOAD_SSL_STRINGS | openssl.OPENSSL_INIT_LOAD_CRYPTO_STRINGS, null);
+
+    const ctx: ?*openssl.SSL_CTX = openssl.SSL_CTX_new(openssl.TLS_client_method());
+    defer openssl.SSL_CTX_free(ctx);
+    if (ctx == null) {
+        try stderr.print("Error getting ssl context\n", .{});
+        try ebw.flush();
+        return error.SslCtx;
+    }
+
+    const ssl: ?*openssl.SSL = openssl.SSL_new(ctx);
+    defer openssl.SSL_free(ssl);
+    if (ssl == null) {
+        try stdout.print("Failed to create new SSL\n", .{});
+        try ebw.flush();
+        return error.NewSsl;
+    }
+
+    if (openssl.SSL_set_fd(ssl, client.handle) <= 0) {
+        try stderr.print("Error setting stream to use ssl\n", .{});
+        try ebw.flush();
+        return error.StreamAsTls;
+    }
+
+    if (openssl.SSL_connect(ssl) < 0) {
+        try stderr.print("Failed to connect using ssl\n", .{});
+        try ebw.flush();
+        return error.FailedSslConnect;
+    }
+
+    defer {
+        openssl.SSL_set_shutdown(ssl, openssl.SSL_RECEIVED_SHUTDOWN | openssl.SSL_SENT_SHUTDOWN);
+        _ = openssl.SSL_shutdown(ssl);
+    }
 
     const data = try allocator.alloc(u8, address.len + 4);
 
     _ = try std.fmt.bufPrint(data, "{s}\r\n", .{address});
+    //const req: ?*const []u8 = @as(?*const []u8, @ptrCast(@alignCast(data)));
+    const data_len: c_int = @intCast(data.len);
 
-    var writer = client.writer();
-    const size = try writer.write(data);
-    try stdout.print("Request: {s}, wrote: {d}\n", .{ data, size });
-    try bw.flush();
+    if (openssl.SSL_write(ssl, data.ptr, data_len) <= 0) {
+        try stderr.print("Could not write to server\n", .{});
+        try ebw.flush();
+        return error.WriteFailed;
+    }
     allocator.free(data);
 
-    var reader = client.reader();
-    const message = reader.readAllAlloc(allocator, 1024) catch |err| {
-        try stderr.print("Failed to read response: {}", .{err});
-        try ebw.flush();
-        return;
-    };
+    const buf = try allocator.alloc(u8, 1024);
+    var response = std.ArrayList([]u8).init(allocator);
+    const buf_len: c_int = @intCast(buf.len);
 
-    try stdout.print("Response: {s}", .{message});
-    try bw.flush();
-    allocator.free(message);
+    //FIX: It doesnt save buf/mutTemp correctly in arraylis
+    var n = openssl.SSL_read(ssl, buf.ptr, buf_len);
+    while (n > 0) {
+        const tempInt: usize = @intCast(n);
+        var mutTemp: [1024]u8 = undefined;
+        @memcpy(&mutTemp, buf);
+        try stdout.print("{s}", .{mutTemp[0..tempInt]});
+        try bw.flush();
+        try response.append(mutTemp[0..tempInt]);
+        n = openssl.SSL_read(ssl, buf.ptr, buf_len);
+    }
+    allocator.free(buf);
+
+    for (response.items) |line| {
+        try stdout.print("{s}", .{line});
+        try bw.flush();
+    }
+    response.deinit();
     client.close();
 }
