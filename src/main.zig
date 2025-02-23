@@ -30,16 +30,17 @@ pub fn main() !void {
         }
     }
 
-    //var splitUri = std.mem.split(u8, address, "//");
-    //const protocol: []const u8 = splitUri.next() orelse {
-    //    return error.NoProtocol;
-    //};
+    var splitUri = std.mem.split(u8, address, "://");
+    const protocol: []const u8 = splitUri.next() orelse {
+        return error.NoProtocol;
+    };
 
-    //if (std.mem.eql(u8, protocol, "gemini")) {
-    //    try stderr.print("Need gemini protocol, get: {s}\n", .{protocol});
-    //    try ebw.flush();
-    //    return error.UnsupportedProtocol;
-    //}
+    if (!std.mem.eql(u8, protocol, "gemini")) {
+        try stderr.print("Need gemini protocol, get: {s}\n", .{protocol});
+        try ebw.flush();
+        return error.UnsupportedProtocol;
+    }
+
     const uri = std.Uri.parse(address) catch |err| {
         try stderr.print("Error parsing url: {}", .{err});
         try ebw.flush();
