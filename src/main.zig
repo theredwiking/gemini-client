@@ -99,7 +99,6 @@ pub fn main() !void {
     const data = try allocator.alloc(u8, address.len + 4);
 
     _ = try std.fmt.bufPrint(data, "{s}\r\n", .{address});
-    //const req: ?*const []u8 = @as(?*const []u8, @ptrCast(@alignCast(data)));
     const data_len: c_int = @intCast(data.len);
 
     if (openssl.SSL_write(ssl, data.ptr, data_len) <= 0) {
@@ -110,18 +109,16 @@ pub fn main() !void {
     allocator.free(data);
 
     const buf = try allocator.alloc(u8, 1024);
-    var response = std.ArrayList([]u8).init(allocator);
+    var response = std.ArrayList([]const u8).init(allocator);
     const buf_len: c_int = @intCast(buf.len);
 
-    //FIX: It doesnt save buf/mutTemp correctly in arraylis
+    const heap = std.heap.page_allocator;
     var n = openssl.SSL_read(ssl, buf.ptr, buf_len);
     while (n > 0) {
         const tempInt: usize = @intCast(n);
-        var mutTemp: [1024]u8 = undefined;
-        @memcpy(&mutTemp, buf);
-        try stdout.print("{s}", .{mutTemp[0..tempInt]});
-        try bw.flush();
-        try response.append(mutTemp[0..tempInt]);
+        const tempBuf = try std.fmt.allocPrint(heap, "{s}", .{buf[0..tempInt]});
+        errdefer heap.free(tempBuf);
+        try response.append(tempBuf);
         n = openssl.SSL_read(ssl, buf.ptr, buf_len);
     }
     allocator.free(buf);
