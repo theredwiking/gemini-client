@@ -16,7 +16,7 @@ All building and testing is done using zig version 0.13.0 and linux
 git clone https://github.com/theredwiking/gemini-client.git
 cd gemini-client
 zig build
-/zig-out/bin/gemini-protocol gemini://geminiprotocol.net/
+./zig-out/bin/gemini-protocol gemini://geminiprotocol.net/
 ```
 
 ## Upgrading
