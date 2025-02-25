@@ -9,6 +9,7 @@ All building and testing is done using zig version 0.13.0 and linux
 - [ ] Rewrite all code
 - [ ] Split functions into files
 - [ ] Open window and render response
+- [ ] Add tests
 
 ## Build
 ```bash
