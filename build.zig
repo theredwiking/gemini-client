@@ -29,6 +29,8 @@ pub fn build(b: *std.Build) void {
     // running `zig build`).
     b.installArtifact(lib);
 
+    const tls = b.dependency("tls", .{ .target = target, .optimize = optimize }).module("tls");
+
     const exe = b.addExecutable(.{
         .name = "gemini-protocol",
         .root_source_file = b.path("src/main.zig"),
@@ -36,9 +38,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    exe.linkSystemLibrary("ssl");
-    exe.linkSystemLibrary("crypto");
-    exe.linkLibC();
+    exe.root_module.addImport("tls", tls);
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default

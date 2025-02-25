@@ -22,7 +22,12 @@
     // `zig build --fetch` can be used to fetch all dependencies of a package, recursively.
     // Once all dependencies are fetched, `zig build` no longer requires
     // internet connectivity.
-    .dependencies = .{},
+    .dependencies = .{
+        .tls = .{
+            .url = "https://github.com/ianic/tls.zig/archive/refs/heads/zig-0.13.0.tar.gz",
+            .hash = "1220155274b6ddc0fcdf361e279efb66d60cb989eb71d4a01e963a061c96bb6995c9",
+        },
+    },
     .paths = .{
         "build.zig",
         "build.zig.zon",
