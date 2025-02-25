@@ -64,6 +64,7 @@ pub fn main() !void {
     var conn = try tls.client(stream, .{
         .host = host,
         .root_ca = root_ca,
+        .insecure_skip_verify = true,
     });
 
     const data = try allocator.alloc(u8, address.len + 4);
