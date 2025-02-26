@@ -27,6 +27,10 @@
             .url = "https://github.com/ianic/tls.zig/archive/refs/heads/zig-0.13.0.tar.gz",
             .hash = "1220155274b6ddc0fcdf361e279efb66d60cb989eb71d4a01e963a061c96bb6995c9",
         },
+        .dvui = .{
+            .url = "https://github.com/david-vanderson/dvui/archive/v0.2.0.tar.gz",
+            .hash = "122044e22bc953f8f4653110dcb702653bdd4d43c2284e2868d8ba7c3290dab2bdaf",
+        },
     },
     .paths = .{
         "build.zig",
