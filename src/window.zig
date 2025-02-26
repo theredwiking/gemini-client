@@ -37,6 +37,8 @@ pub fn window(allocator: std.mem.Allocator) !void {
         _ = Backend.c.SDL_SetRenderDrawColor(backend.renderer, 0, 0, 0, 255);
         _ = Backend.c.SDL_RenderClear(backend.renderer);
 
+        try gui_frame();
+
         const end_micros = try win.end(.{});
 
         backend.setCursor(win.cursorRequested());
@@ -47,4 +49,17 @@ pub fn window(allocator: std.mem.Allocator) !void {
         const wait_event_micros = win.waitTime(end_micros, null);
         backend.waitEventTimeout(wait_event_micros);
     }
+}
+
+fn gui_frame() !void {
+    var scroll = try dvui.scrollArea(@src(), .{}, .{ .expand = .both, .color_fill = .{ .name = .fill_window } });
+    defer scroll.deinit();
+
+    var tl = try dvui.textLayout(@src(), .{}, .{ .expand = .horizontal });
+    try tl.addText(
+        \\DVUI
+        \\- Testing
+        \\- Maybe multiline works
+    , .{});
+    tl.deinit();
 }
