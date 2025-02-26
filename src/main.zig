@@ -1,6 +1,7 @@
 const std = @import("std");
 const net = std.net;
 const tls = @import("tls");
+const window = @import("window.zig");
 
 pub fn main() !void {
     var args = std.process.args();
@@ -91,4 +92,5 @@ pub fn main() !void {
     response.deinit();
     try conn.close();
     stream.close();
+    try window.window(allocator);
 }
