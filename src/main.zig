@@ -1,7 +1,9 @@
 const std = @import("std");
-const net = std.net;
 const tls = @import("tls");
 const window = @import("window.zig");
+const gemini = @import("gemini.zig");
+
+const net = std.net;
 
 pub fn main() !void {
     var args = std.process.args();
@@ -32,23 +34,9 @@ pub fn main() !void {
         }
     }
 
-    var splitUri = std.mem.split(u8, address, "://");
-    const protocol: []const u8 = splitUri.next() orelse {
-        return error.NoProtocol;
-    };
+    try gemini.protocolCheck(address);
 
-    if (!std.mem.eql(u8, protocol, "gemini")) {
-        try stderr.print("Need gemini protocol, get: {s}\n", .{protocol});
-        try ebw.flush();
-        return error.UnsupportedProtocol;
-    }
-
-    const uri = std.Uri.parse(address) catch |err| {
-        try stderr.print("Error parsing url: {}", .{err});
-        try ebw.flush();
-        return;
-    };
-    const host = uri.host.?.percent_encoded;
+    const host = try gemini.urlToUri(address);
 
     const stream: net.Stream = net.tcpConnectToHost(allocator, host, 1965) catch |err| {
         try stderr.print("Failed to connect: {?}\n", .{err});
