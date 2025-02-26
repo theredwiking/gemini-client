@@ -45,7 +45,7 @@ pub fn window(allocator: std.mem.Allocator) !void {
 
         try textInput(&buf, &enter_pressed);
         if (enter_pressed) {
-            try textArea();
+            try textArea(buf);
         }
 
         const end_micros = try win.end(.{});
@@ -76,7 +76,7 @@ fn textInput(buffer: *[50]u8, enter_pressed: *bool) !void {
     txtin.deinit();
 }
 
-fn textArea() !void {
+fn textArea(buf: [50]u8) !void {
     const scroll = try dvui.scrollArea(@src(), .{}, .{ .expand = .both, .color_fill = .{ .name = .fill_window } });
     defer scroll.deinit();
 
@@ -85,6 +85,8 @@ fn textArea() !void {
         \\DVUI
         \\- Testing
         \\- Maybe multiline works
+        \\
     , .{});
+    try tl.addText(&buf, .{});
     tl.deinit();
 }
