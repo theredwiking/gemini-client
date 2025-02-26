@@ -27,6 +27,12 @@ pub fn window(allocator: std.mem.Allocator) !void {
     var win = try dvui.Window.init(@src(), allocator, backend.backend(), .{});
     defer win.deinit();
 
+    //var buf = try allocator.alloc(u8, 50);
+    //defer allocator.free(buf);
+    var buf = std.mem.zeroes([50]u8);
+
+    var enter_pressed = false;
+
     main_loop: while (true) {
         const nstime = win.beginWait(backend.hasEvent());
         try win.begin(nstime);
@@ -34,10 +40,13 @@ pub fn window(allocator: std.mem.Allocator) !void {
         const quit = try backend.addAllEvents(&win);
         if (quit) break :main_loop;
 
-        _ = Backend.c.SDL_SetRenderDrawColor(backend.renderer, 0, 0, 0, 255);
+        _ = Backend.c.SDL_SetRenderDrawColor(backend.renderer, 255, 255, 255, 255);
         _ = Backend.c.SDL_RenderClear(backend.renderer);
 
-        try gui_frame();
+        try textInput(&buf, &enter_pressed);
+        if (enter_pressed) {
+            try textArea();
+        }
 
         const end_micros = try win.end(.{});
 
@@ -51,11 +60,27 @@ pub fn window(allocator: std.mem.Allocator) !void {
     }
 }
 
-fn gui_frame() !void {
-    var scroll = try dvui.scrollArea(@src(), .{}, .{ .expand = .both, .color_fill = .{ .name = .fill_window } });
+fn textInput(buffer: *[50]u8, enter_pressed: *bool) !void {
+    var left_align = dvui.Alignment.init();
+    defer left_align.deinit();
+
+    const hbox = try dvui.box(@src(), .horizontal, .{ .color_fill = .{ .name = .fill_window } });
+    defer hbox.deinit();
+
+    try dvui.label(@src(), "Search field", .{}, .{ .gravity_y = 0.5 });
+
+    try left_align.spacer(@src(), 0);
+
+    var txtin = try dvui.textEntry(@src(), .{ .text = .{ .buffer = buffer } }, .{ .max_size_content = dvui.Options.sizeM(20, 0) });
+    if (txtin.enter_pressed) enter_pressed.* = true;
+    txtin.deinit();
+}
+
+fn textArea() !void {
+    const scroll = try dvui.scrollArea(@src(), .{}, .{ .expand = .both, .color_fill = .{ .name = .fill_window } });
     defer scroll.deinit();
 
-    var tl = try dvui.textLayout(@src(), .{}, .{ .expand = .horizontal });
+    const tl = try dvui.textLayout(@src(), .{}, .{ .expand = .horizontal });
     try tl.addText(
         \\DVUI
         \\- Testing
