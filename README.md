@@ -11,6 +11,7 @@ All building and testing is done using zig version 0.13.0 and linux
 - [ ] Open window and render response
 - [ ] Add tests
 - [ ] Add lexer for gmi format
+- [ ] Implement better errors and handling of them
 
 ## Build
 ```bash
