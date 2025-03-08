@@ -5,7 +5,7 @@ const mem = std.mem;
 const net = std.net;
 
 pub fn protocolCheck(address: []const u8) !void {
-    var splitUri = std.mem.split(u8, address, "://");
+    var splitUri = std.mem.splitAny(u8, address, "://");
     const protocol: []const u8 = splitUri.next() orelse {
         return error.NoProtocol;
     };
@@ -36,10 +36,10 @@ const Stream = struct {
     socket: net.Stream,
     host: []const u8,
     allocator: mem.Allocator,
-    root_ca: ?tls.CertBundle = null,
+    root_ca: ?tls.config.CertBundle = null,
     conn: ?tls.Connection(net.Stream) = null,
     pub fn connect(self: *Stream) !void {
-        self.root_ca = try tls.CertBundle.fromSystem(self.allocator);
+        self.root_ca = try tls.config.CertBundle.fromSystem(self.allocator);
         const conn = try tls.client(self.socket, .{
             .host = self.host,
             .root_ca = self.root_ca.?,

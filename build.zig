@@ -16,7 +16,7 @@ pub fn build(b: *std.Build) void {
     const dvui = b.dependency("dvui", .{ .target = target, .optimize = optimize, .sdl3 = true }).module("dvui_sdl");
 
     const exe = b.addExecutable(.{
-        .name = "gemini-protocol",
+        .name = "gemini-client",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
