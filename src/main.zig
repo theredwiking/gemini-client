@@ -55,6 +55,8 @@ pub fn main() !void {
         _ = Backend.c.SDL_SetRenderDrawColor(backend.renderer, 255, 255, 255, 255);
         _ = Backend.c.SDL_RenderClear(backend.renderer);
         try window.textInput(&buf, &enter_pressed);
+        // TODO: Change so that only request is done in here
+        //       and textArea is called outside if statement
         if (enter_pressed) {
             var stream = try gemini.init(allocator, &buf);
             try stream.connect();
