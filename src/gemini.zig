@@ -32,14 +32,11 @@ pub fn init(allocator: mem.Allocator, address: []const u8) !Stream {
     return Stream{ .socket = stream, .host = host, .allocator = allocator };
 }
 
-fn trimUrl(allocator: mem.Allocator, data: []u8) !std.ArrayList([]u8) {
-    var response = std.ArrayList([]u8).init(allocator);
-    const heap = std.heap.page_allocator;
+fn trimUrl(allocator: mem.Allocator, data: []u8) !std.ArrayList(u8) {
+    var response = std.ArrayList(u8).init(allocator);
     for (data) |char| {
         if (char != 0) {
-            const tempBuf = try std.fmt.allocPrint(heap, "{}", .{char});
-            errdefer heap.free(tempBuf);
-            try response.append(tempBuf);
+            try response.append(char);
         }
     }
     return response;
@@ -69,9 +66,9 @@ const Stream = struct {
         const url = try trimUrl(self.allocator, data);
         const buf = try self.allocator.alloc(u8, url.items.len + 4);
         const req = try std.fmt.bufPrint(buf, "{s}\r\n", .{url.items});
-        std.debug.print("Len: {d}\n", .{req.len});
         try self.conn.?.writeAll(req);
         self.allocator.free(buf);
+        url.deinit();
     }
     pub fn read(self: *Stream) !std.ArrayList([]const u8) {
         var response = std.ArrayList([]const u8).init(self.allocator);
