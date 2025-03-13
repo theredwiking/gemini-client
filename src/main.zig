@@ -7,6 +7,7 @@ const gemini = @import("gemini/network.zig");
 
 const net = std.net;
 
+// TODO: Move into window.zig
 const winapi = if (builtin.os.tag == .windows) struct {
     extern "kernel32" fn AttachConsole(dwProcessId: std.os.windows.DWORD) std.os.windows.BOOL;
 } else struct {};
@@ -43,6 +44,8 @@ pub fn main() !void {
 
     var buf = std.mem.zeroes([50]u8);
     var enter_pressed: bool = false;
+    var response: std.ArrayList([]const u8) = std.ArrayList([]const u8).init(allocator);
+    defer response.deinit();
 
     main_loop: while (true) {
         const nstime = win.beginWait(backend.hasEvent());
@@ -54,18 +57,18 @@ pub fn main() !void {
         _ = Backend.c.SDL_SetRenderDrawColor(backend.renderer, 255, 255, 255, 255);
         _ = Backend.c.SDL_RenderClear(backend.renderer);
         try window.textInput(&buf, &enter_pressed);
-        // TODO: Change so that only request is done in here
-        //       and textArea is called outside if statement
-        //       and add a way to detect buf changed
         if (enter_pressed) {
             var stream = try gemini.init(allocator, &buf);
             try stream.connect();
 
             try stream.write(&buf);
-            var response = try stream.read();
-            try window.textArea(response);
-            response.deinit();
+            response = try stream.read();
             try stream.deinit();
+            enter_pressed = false;
+        }
+
+        if (response.items.len != 0) {
+            try window.textArea(response);
         }
 
         const end_micros = try win.end(.{});
