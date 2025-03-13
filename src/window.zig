@@ -76,6 +76,10 @@ pub fn textInput(buffer: *[50]u8, enter_pressed: *bool) !void {
     txtin.deinit();
 }
 
+pub fn fpsCounter() void {
+    std.debug.print("FPS: {d:0>3.0}\n", .{dvui.FPS()});
+}
+
 pub fn textArea(buf: std.ArrayList([]const u8)) !void {
     const scroll = try dvui.scrollArea(@src(), .{}, .{ .expand = .both, .color_fill = .{ .name = .fill_window } });
     defer scroll.deinit();
