@@ -3,7 +3,7 @@ const builtin = @import("builtin");
 const dvui = @import("dvui");
 
 const window = @import("window.zig");
-const gemini = @import("gemini.zig");
+const gemini = @import("gemini/network.zig");
 
 const net = std.net;
 
