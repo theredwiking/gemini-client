@@ -1,6 +1,8 @@
 const std = @import("std");
 const tls = @import("tls");
 
+const tokenizer = @import("tokenizer.zig");
+
 const mem = std.mem;
 const net = std.net;
 
@@ -79,6 +81,8 @@ const Stream = struct {
             errdefer heap.free(tempBuf);
             try response.append(tempBuf);
         }
+        const temp = try tokenizer.loopText(self.allocator, response);
+        temp.deinit();
         return response;
     }
 };

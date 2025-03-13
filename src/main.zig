@@ -56,12 +56,15 @@ pub fn main() !void {
 
         _ = Backend.c.SDL_SetRenderDrawColor(backend.renderer, 255, 255, 255, 255);
         _ = Backend.c.SDL_RenderClear(backend.renderer);
+
         try window.textInput(&buf, &enter_pressed);
+
         if (enter_pressed) {
             var stream = try gemini.init(allocator, &buf);
             try stream.connect();
 
             try stream.write(&buf);
+            // FIX: Memory leak because response is not deinited
             response = try stream.read();
             try stream.deinit();
             enter_pressed = false;
