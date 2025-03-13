@@ -23,7 +23,6 @@ pub fn main() !void {
         }
     }
 
-    //try window.window(allocator);
     if (builtin.os.tag == .windows) {
         _ = winapi.AttachConsole(0xFFFFFFFF);
     }
@@ -57,6 +56,7 @@ pub fn main() !void {
         try window.textInput(&buf, &enter_pressed);
         // TODO: Change so that only request is done in here
         //       and textArea is called outside if statement
+        //       and add a way to detect buf changed
         if (enter_pressed) {
             var stream = try gemini.init(allocator, &buf);
             try stream.connect();
