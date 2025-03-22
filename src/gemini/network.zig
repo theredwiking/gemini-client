@@ -1,10 +1,12 @@
 const std = @import("std");
 const tls = @import("tls");
 
+const tokenizer = @import("tokenizer.zig");
+
 const mem = std.mem;
 const net = std.net;
 
-pub fn protocolCheck(address: []const u8) !void {
+fn protocolCheck(address: []const u8) !void {
     var splitUri = std.mem.splitAny(u8, address, "://");
     const protocol: []const u8 = splitUri.next() orelse {
         return error.NoProtocol;
@@ -15,7 +17,7 @@ pub fn protocolCheck(address: []const u8) !void {
     }
 }
 
-pub fn urlToUri(address: []const u8) !([]const u8) {
+fn urlToUri(address: []const u8) !([]const u8) {
     const uri = std.Uri.parse(address) catch |err| {
         return err;
     };
@@ -42,7 +44,7 @@ fn trimUrl(allocator: mem.Allocator, data: []u8) !std.ArrayList(u8) {
     return response;
 }
 
-const Stream = struct {
+pub const Stream = struct {
     socket: net.Stream,
     host: []const u8,
     allocator: mem.Allocator,
@@ -70,15 +72,15 @@ const Stream = struct {
         self.allocator.free(buf);
         url.deinit();
     }
-    pub fn read(self: *Stream) !std.ArrayList([]const u8) {
-        var response = std.ArrayList([]const u8).init(self.allocator);
+    pub fn read(self: *Stream) !std.ArrayList(tokenizer.Token) {
+        var tempList = std.ArrayList([]const u8).init(self.allocator);
 
         const heap = std.heap.page_allocator;
         while (try self.conn.?.next()) |res| {
             const tempBuf = try std.fmt.allocPrint(heap, "{s}", .{res});
             errdefer heap.free(tempBuf);
-            try response.append(tempBuf);
+            try tempList.append(tempBuf);
         }
-        return response;
+        return try tokenizer.tokenize(self.allocator, tempList);
     }
 };

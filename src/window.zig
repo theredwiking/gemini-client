@@ -1,64 +1,13 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const dvui = @import("dvui");
+const gemini = @import("gemini/root.zig");
 
 const winapi = if (builtin.os.tag == .windows) struct {
     extern "kernel32" fn AttachConsole(dwProcessId: std.os.windows.DWORD) std.os.windows.BOOL;
 } else struct {};
 
 const Backend = dvui.backend;
-
-//pub fn window(allocator: std.mem.Allocator) !void {
-//    if (builtin.os.tag == .windows) {
-//        _ = winapi.AttachConsole(0xFFFFFFFF);
-//    }
-//
-//    std.log.info("SDL version: {}", .{Backend.getSDLVersion()});
-//
-//    var backend = try Backend.initWindow(.{
-//        .allocator = allocator,
-//        .size = .{ .w = 800.0, .h = 600.0 },
-//        .min_size = .{ .w = 250.0, .h = 350 },
-//        .vsync = false,
-//        .title = "DVUI Testing",
-//    });
-//    defer backend.deinit();
-//
-//    var win = try dvui.Window.init(@src(), allocator, backend.backend(), .{});
-//    defer win.deinit();
-//
-//    //var buf = try allocator.alloc(u8, 50);
-//    //defer allocator.free(buf);
-//    var buf = std.mem.zeroes([50]u8);
-//
-//    var enter_pressed = false;
-//
-//    main_loop: while (true) {
-//        const nstime = win.beginWait(backend.hasEvent());
-//        try win.begin(nstime);
-//
-//        const quit = try backend.addAllEvents(&win);
-//        if (quit) break :main_loop;
-//
-//        _ = Backend.c.SDL_SetRenderDrawColor(backend.renderer, 255, 255, 255, 255);
-//        _ = Backend.c.SDL_RenderClear(backend.renderer);
-//
-//        try textInput(&buf, &enter_pressed);
-//        if (enter_pressed) {
-//            try textArea(buf);
-//        }
-//
-//        const end_micros = try win.end(.{});
-//
-//        backend.setCursor(win.cursorRequested());
-//        backend.textInputRect(win.textInputRequested());
-//
-//        backend.renderPresent();
-//
-//        const wait_event_micros = win.waitTime(end_micros, null);
-//        backend.waitEventTimeout(wait_event_micros);
-//    }
-//}
 
 pub fn textInput(buffer: *[50]u8, enter_pressed: *bool) !void {
     var left_align = dvui.Alignment.init();
@@ -76,17 +25,30 @@ pub fn textInput(buffer: *[50]u8, enter_pressed: *bool) !void {
     txtin.deinit();
 }
 
-pub fn fpsCounter() void {
-    std.debug.print("FPS: {d:0>3.0}\n", .{dvui.FPS()});
-}
-
-pub fn textArea(buf: std.ArrayList([]const u8)) !void {
+pub fn textArea(buf: std.ArrayList(gemini.Token)) !void {
     const scroll = try dvui.scrollArea(@src(), .{}, .{ .expand = .both, .color_fill = .{ .name = .fill_window } });
     defer scroll.deinit();
 
     const tl = try dvui.textLayout(@src(), .{}, .{ .expand = .horizontal });
-    for (buf.items) |line| {
-        try tl.addText(line, .{});
+    for (buf.items) |token| {
+        switch (token.type) {
+            .TextLine => {
+                try tl.addText(token.line, .{});
+            },
+            .HeadingLine => {
+                try tl.addText(token.line, .{ .font_style = .title });
+                try tl.addText("\n", .{});
+            },
+            .LinkLine => {
+                // TODO: Look into addTextClick
+                try tl.addText(token.line, .{});
+                try tl.addText("\n", .{});
+            },
+            else => {
+                continue;
+            },
+        }
+        try tl.addText("\n", .{});
     }
     tl.deinit();
 }

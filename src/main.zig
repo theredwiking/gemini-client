@@ -3,7 +3,7 @@ const builtin = @import("builtin");
 const dvui = @import("dvui");
 
 const window = @import("window.zig");
-const gemini = @import("gemini/network.zig");
+const gemini = @import("gemini/root.zig");
 
 const net = std.net;
 
@@ -28,14 +28,12 @@ pub fn main() !void {
         _ = winapi.AttachConsole(0xFFFFFFFF);
     }
 
-    std.log.info("SDL version: {}", .{Backend.getSDLVersion()});
-
     var backend = try Backend.initWindow(.{
         .allocator = allocator,
         .size = .{ .w = 800.0, .h = 600.0 },
         .min_size = .{ .w = 250.0, .h = 350 },
         .vsync = false,
-        .title = "DVUI Testing",
+        .title = "Gemini",
     });
     defer backend.deinit();
 
@@ -44,7 +42,7 @@ pub fn main() !void {
 
     var buf = std.mem.zeroes([50]u8);
     var enter_pressed: bool = false;
-    var response: std.ArrayList([]const u8) = std.ArrayList([]const u8).init(allocator);
+    var response: std.ArrayList(gemini.Token) = std.ArrayList(gemini.Token).init(allocator);
     defer response.deinit();
 
     main_loop: while (true) {
@@ -56,12 +54,15 @@ pub fn main() !void {
 
         _ = Backend.c.SDL_SetRenderDrawColor(backend.renderer, 255, 255, 255, 255);
         _ = Backend.c.SDL_RenderClear(backend.renderer);
+
         try window.textInput(&buf, &enter_pressed);
+
         if (enter_pressed) {
             var stream = try gemini.init(allocator, &buf);
             try stream.connect();
 
             try stream.write(&buf);
+            // FIX: Memory leak because response is not deinited
             response = try stream.read();
             try stream.deinit();
             enter_pressed = false;
