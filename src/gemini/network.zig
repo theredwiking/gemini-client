@@ -74,6 +74,8 @@ pub const Stream = struct {
     }
     pub fn read(self: *Stream) !std.ArrayList(tokenizer.Token) {
         var tempList = std.ArrayList([]const u8).init(self.allocator);
+        defer tempList.deinit();
+        errdefer tempList.deinit();
 
         const heap = std.heap.page_allocator;
         while (try self.conn.?.next()) |res| {
