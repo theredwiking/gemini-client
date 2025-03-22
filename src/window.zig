@@ -12,9 +12,11 @@ const Backend = dvui.backend;
 pub fn textInput(buffer: *[50]u8, enter_pressed: *bool) !void {
     var left_align = dvui.Alignment.init();
     defer left_align.deinit();
+    errdefer left_align.deinit();
 
     const hbox = try dvui.box(@src(), .horizontal, .{ .color_fill = .{ .name = .fill_window } });
     defer hbox.deinit();
+    errdefer hbox.deinit();
 
     try dvui.label(@src(), "Search field", .{}, .{ .gravity_y = 0.5 });
 
@@ -28,6 +30,7 @@ pub fn textInput(buffer: *[50]u8, enter_pressed: *bool) !void {
 pub fn textArea(buf: std.ArrayList(gemini.Token)) !void {
     const scroll = try dvui.scrollArea(@src(), .{}, .{ .expand = .both, .color_fill = .{ .name = .fill_window } });
     defer scroll.deinit();
+    errdefer scroll.deinit();
 
     const tl = try dvui.textLayout(@src(), .{}, .{ .expand = .horizontal });
     for (buf.items) |token| {

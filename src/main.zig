@@ -23,6 +23,12 @@ pub fn main() !void {
             @panic("LEAK DETECTED");
         }
     }
+    errdefer {
+        const deinit_status = gpa.deinit();
+        if (deinit_status == .leak) {
+            @panic("LEAK DETECTED");
+        }
+    }
 
     if (builtin.os.tag == .windows) {
         _ = winapi.AttachConsole(0xFFFFFFFF);
@@ -36,14 +42,17 @@ pub fn main() !void {
         .title = "Gemini",
     });
     defer backend.deinit();
+    errdefer backend.deinit();
 
     var win = try dvui.Window.init(@src(), allocator, backend.backend(), .{});
     defer win.deinit();
+    errdefer win.deinit();
 
     var buf = std.mem.zeroes([50]u8);
     var enter_pressed: bool = false;
     var response: std.ArrayList(gemini.Token) = std.ArrayList(gemini.Token).init(allocator);
     defer response.deinit();
+    errdefer response.deinit();
 
     main_loop: while (true) {
         const nstime = win.beginWait(backend.hasEvent());
